@@ -23,6 +23,21 @@ export const ACCEPT_MAX = 0.8;
 export const MAX_PIN_TRIES = 5;
 export const PIN_LOCK_MS = 30000;
 
+/**
+ * There is no UI for margin or confirmFrames; a stored value may only make matching stricter than
+ * the tuned defaults (SPEC phase 4: never lower them without real data). Non-numbers -> fallback.
+ */
+export function clampMargin(value, fallback) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(1, Math.max(fallback, n));
+}
+export function clampConfirmFrames(value, fallback) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return fallback;
+  return Math.min(50, Math.max(fallback, Math.floor(n)));
+}
+
 /** Returns an error message for an invalid PIN, or null if it is 4-6 digits. */
 export function pinProblem(pin) {
   if (typeof pin !== 'string' || !/^\d+$/.test(pin)) return 'The PIN must be digits only.';

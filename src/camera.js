@@ -7,6 +7,10 @@
 //
 // onFrame(video) is called at about `fps` per second (default 10) while the camera is running.
 // It may return a promise; the next tick is skipped while it is still pending, so analyses never overlap.
+// While the camera track is muted or no longer live (phone locked, app backgrounded, camera taken by
+// another app) the <video> may keep showing its last, frozen picture: onFrame(null) is called instead,
+// so callers treat those ticks as "no face" rather than re-analysing a stale frame.
+// If the track ends on its own, the camera stops and onError('The camera stopped.') is called.
 // The preview is just the <video> element playing at its own full frame rate.
 
 const DEFAULT_FPS = 10;
@@ -61,13 +65,19 @@ export function createCamera({ video, onFrame, onError, fps = DEFAULT_FPS } = {}
     timer = setTimeout(() => tick(gen), interval);
   }
 
+  function trackStalled() {
+    const track = stream ? stream.getVideoTracks()[0] : null;
+    return !track || track.readyState !== 'live' || track.muted === true;
+  }
+
   async function tick(gen) {
     if (gen !== generation) return;
     const started = performance.now();
-    if (!busy && video.readyState >= 2 && video.videoWidth > 0 && onFrame) {
+    const stalled = trackStalled();
+    if (!busy && onFrame && (stalled || (video.readyState >= 2 && video.videoWidth > 0))) {
       busy = true;
       try {
-        await onFrame(video);
+        await onFrame(stalled ? null : video);
       } catch (err) {
         report(err); // keep looping; one bad frame is not fatal
       } finally {
@@ -95,6 +105,13 @@ export function createCamera({ video, onFrame, onError, fps = DEFAULT_FPS } = {}
         return { ok: false, error: 'cancelled' };
       }
       stream = s;
+      for (const t of s.getVideoTracks()) {
+        t.addEventListener('ended', () => {
+          if (gen !== generation) return; // our own stop(); track.stop() does not fire this anyway
+          stop();
+          report('The camera stopped.');
+        });
+      }
       const settings = s.getVideoTracks()[0]?.getSettings?.() || {};
       facing = settings.facingMode || 'unknown';
       video.srcObject = s;

@@ -17,6 +17,21 @@ test('clampAccept never goes below the safe minimum', () => {
   assert.equal(L.clampAccept('x', 0.65), 0.65);
 });
 
+test('clampMargin / clampConfirmFrames never go below the tuned defaults', () => {
+  assert.equal(L.clampMargin(0, 0.1), 0.1);
+  assert.equal(L.clampMargin(-1, 0.1), 0.1);
+  assert.equal(L.clampMargin(0.15, 0.1), 0.15);
+  assert.equal(L.clampMargin(5, 0.1), 1);
+  assert.equal(L.clampMargin(undefined, 0.1), 0.1);
+  assert.equal(L.clampMargin(NaN, 0.1), 0.1);
+  assert.equal(L.clampConfirmFrames(1, 5), 5);
+  assert.equal(L.clampConfirmFrames(0, 5), 5);
+  assert.equal(L.clampConfirmFrames(7.9, 5), 7);
+  assert.equal(L.clampConfirmFrames(1000, 5), 50);
+  assert.equal(L.clampConfirmFrames('x', 5), 5);
+  assert.equal(L.clampConfirmFrames(null, 5), 5);
+});
+
 test('checkPhoto decisions', () => {
   assert.equal(L.checkPhoto(good, 100).ok, true);
   assert.equal(L.checkPhoto(null, 100).ok, false);

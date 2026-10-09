@@ -80,6 +80,7 @@ The same steps are in the **Help** page of the caregiver area.
 ## 8. Troubleshooting
 
 - **The camera does not show.** Go to Settings, then Privacy & Security, then Camera, and turn on **Safari** (or the app). Then close the app fully and open it again.
+- **"Tap to start" comes back by itself.** The camera was stopped, for example by another app or a phone call. Tap it again.
 - **Nothing is spoken.** Turn the volume up, check the silent switch, and check that speech is on in caregiver mode.
 - **The person is never recognised.** Add more varied photos (3 to 10 is the limit, so swap in better ones). Check the lighting and that the face is facing the camera and fairly close.
 - **The wrong or no name appears.** Let the caregiver check the photos and add better ones. Do not add photos of other people to the same person.

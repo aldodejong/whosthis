@@ -36,7 +36,15 @@ export function mount(container) {
     + 'padding-bottom:calc(8px + env(safe-area-inset-bottom,0px));background:rgba(0,0,0,.75);color:#fff;'
     + 'font:13px/1.4 ui-monospace,Menlo,monospace;white-space:pre-wrap;overflow-wrap:anywhere';
 
-  stage.append(video, canvas, status, debug);
+  // The Home Screen app has no browser back button, so the test view needs its own way out.
+  const back = document.createElement('button');
+  back.type = 'button';
+  back.textContent = 'Back';
+  back.style.cssText = 'position:absolute;z-index:2;top:calc(env(safe-area-inset-top,0px) + 8px);'
+    + 'right:calc(env(safe-area-inset-right,0px) + 8px)';
+  back.addEventListener('click', () => { location.hash = '#/caregiver'; });
+
+  stage.append(video, canvas, status, debug, back);
   container.append(stage);
 
   let alive = true;
@@ -84,7 +92,7 @@ export function mount(container) {
     return people.map((p) => {
       const nm = nameOf(p.id).slice(0, 14).padEnd(14);
       if (!usable.has(p.id)) {
-        const why = p.embeddingModel !== face.EMBEDDING_MODEL ? 'old model: open in Edit + Save' : 'no fingerprints';
+        const why = p.embeddingModel !== face.EMBEDDING_MODEL ? 'old model: open in Edit + Save' : 'under 3 usable fingerprints: re-add photos';
         return `    ${nm}   -   (${why})`;
       }
       const s = scoreById.get(p.id);
@@ -196,7 +204,7 @@ export function mount(container) {
     onFrame: async (v) => {
       const t0 = performance.now();
       let r = null;
-      try { r = await face.embed(v); } catch { r = null; }
+      try { r = v ? await face.embed(v) : null; } catch { r = null; } // v null: camera muted/ended
       if (!alive) return;
       frameMs = performance.now() - t0;
       analyse(r, Date.now());

@@ -1,11 +1,14 @@
 // Pure helpers for the patient and test views (no DOM, no face library) so they can run under
 // `node --test`. Rule of the house: when in doubt, show nothing.
 
-import { decide } from './matcher.js';
+import { decide, cosine } from './matcher.js';
 
 // Pipeline step 2 in SPEC.md. The test view imports these too, so there is one copy.
 export const MAX_ANGLE_DEG = 30;
 export const MIN_FACE_FRACTION = 0.15;
+// A person needs at least this many usable fingerprints to be named (SPEC: 3-10 enrolment photos;
+// the caregiver form already enforces 3, so this only guards against damaged or partial records).
+export const MIN_FINGERPRINTS = 3;
 
 /**
  * Why a detected face may not be fingerprint-matched, or null if it may.
@@ -33,15 +36,19 @@ export function isUsableFace(face) {
 
 /**
  * People the matcher may name: only those whose fingerprints came from the current model, and who
- * have at least one fingerprint. Returns [{ id, embeddings }] for matcher.scorePeople.
+ * have at least `minFingerprints` usable ones (non-empty, finite, non-zero, all the same length).
+ * Unusable fingerprints are dropped. Returns [{ id, embeddings }] for matcher.scorePeople.
  */
-export function buildCandidates(people, model) {
+export function buildCandidates(people, model, minFingerprints = MIN_FINGERPRINTS) {
   if (!Array.isArray(people)) return [];
   const out = [];
   for (const p of people) {
     if (!p || p.id == null || p.embeddingModel !== model) continue;
     if (!Array.isArray(p.embeddings) || p.embeddings.length === 0) continue;
-    out.push({ id: p.id, embeddings: p.embeddings });
+    const usable = p.embeddings.filter((e) => Number.isFinite(cosine(e, e)));
+    if (usable.length < minFingerprints) continue;
+    if (usable.some((e) => e.length !== usable[0].length)) continue; // mixed models: not trustworthy
+    out.push({ id: p.id, embeddings: usable });
   }
   return out;
 }

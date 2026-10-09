@@ -155,7 +155,15 @@ export function mount(container) {
     wakeLock = null;
     if (lock) lock.release().catch(() => {});
   }
-  const onVisibility = () => { if (document.visibilityState === 'visible') acquireWakeLock(); };
+  // Hidden (phone locked, app switched away): forget who was in view, so an old card is never
+  // still up when the screen comes back pointing at someone else. The camera keeps running.
+  const onVisibility = () => {
+    if (document.visibilityState === 'visible') { acquireWakeLock(); return; }
+    tracker.reset();
+    applyConfirmed(null);
+    hintState = initialHint();
+    setHint(null);
+  };
   document.addEventListener('visibilitychange', onVisibility);
 
   // --- recognition ------------------------------------------------------------------------
@@ -165,8 +173,10 @@ export function mount(container) {
     let gate = null;
     let now = Date.now();
     try {
-      const r = await face.embed(v);
-      if (!alive) return;
+      // v is null while the camera track is muted/ended (see camera.js): count it as no face.
+      const r = v ? await face.embed(v) : null;
+      // Stopped meanwhile (back to Tap to start, or the page is hidden): drop this stale result.
+      if (!alive || !running || document.visibilityState === 'hidden') return;
       now = Date.now();
       let candidate = null;
       facePresent = !!(r && r.face);
@@ -176,16 +186,17 @@ export function mount(container) {
       }
       confirmedId = tracker.update(candidate, now).confirmedId;
     } catch {
-      if (!alive) return;
+      if (!alive || !running) return;
       now = Date.now();
       confirmedId = tracker.update(null, now).confirmedId; // a bad frame counts as "nobody"
       facePresent = false;
     }
     applyConfirmed(confirmedId);
-    if (running) updateHint({ facePresent, gate, confirmed: shownId !== null, now });
+    updateHint({ facePresent, gate, confirmed: shownId !== null, now });
   }
 
-  const camera = createCamera({ video, onFrame, onError: () => {} });
+  // A camera that stops on its own (track ended) goes back to Tap to start, silently.
+  const camera = createCamera({ video, onFrame, onError: () => { if (alive && running) showStart(); } });
 
   function showStart() {
     running = false;
@@ -280,16 +291,20 @@ function gearIcon() {
     return n;
   };
   const svg = mk('svg', { viewBox: '0 0 48 48', 'aria-hidden': 'true', focusable: 'false' });
-  for (let i = 0; i < 8; i++) {
-    const a = (i * Math.PI) / 4;
-    svg.append(mk('line', {
-      x1: (24 + 17 * Math.cos(a)).toFixed(2), y1: (24 + 17 * Math.sin(a)).toFixed(2),
-      x2: (24 + 22 * Math.cos(a)).toFixed(2), y2: (24 + 22 * Math.sin(a)).toFixed(2),
-      class: 'pt-gear-tooth',
-    }));
+  // Solid cog: 8 flat-topped teeth around a body, no ring around the teeth.
+  const TEETH = 8, R_OUT = 22, R_IN = 17, TOOTH = 0.30, GAP_SHARE = 0.5; // radians of half-width at tip / root
+  const pt = (r, a) => `${(24 + r * Math.cos(a)).toFixed(2)} ${(24 + r * Math.sin(a)).toFixed(2)}`;
+  let d = '';
+  for (let i = 0; i < TEETH; i++) {
+    const c = (i * 2 * Math.PI) / TEETH;
+    const root = TOOTH + 0.12, tip = TOOTH * GAP_SHARE + 0.1;
+    d += `${i ? 'L' : 'M'}${pt(R_IN, c - root)} L${pt(R_OUT, c - tip)} L${pt(R_OUT, c + tip)} L${pt(R_IN, c + root)} `;
+    const next = c + (2 * Math.PI) / TEETH - (TOOTH + 0.12);
+    d += `A${R_IN} ${R_IN} 0 0 1 ${pt(R_IN, next)} `;
   }
-  svg.append(mk('circle', { cx: 24, cy: 24, r: 17, class: 'pt-gear-ring' }));
-  const label = mk('text', { x: 24, y: 24, class: 'pt-gear-label', 'text-anchor': 'middle', 'dominant-baseline': 'central' });
+  svg.append(mk('path', { d: d + 'Z', class: 'pt-gear-body' }));
+  svg.append(mk('circle', { cx: 24, cy: 24, r: 12.5, class: 'pt-gear-hole' }));
+  const label = mk('text', { x: 24, y: 24.5, class: 'pt-gear-label', 'text-anchor': 'middle', 'dominant-baseline': 'central' });
   label.textContent = '3s';
   svg.append(label);
   return svg;

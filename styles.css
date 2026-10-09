@@ -173,12 +173,14 @@ textarea {
 .pt-corner {
   position: absolute; z-index: 5; touch-action: none;
   top: calc(env(safe-area-inset-top, 0px) + 8px); left: calc(env(safe-area-inset-left, 0px) + 8px);
-  width: 64px; height: 64px; border-radius: 50%;
-  background: rgba(0, 0, 0, 0.6); border: 2px solid #fff;
+  width: 64px; height: 64px;
 }
-.pt-corner svg { display: block; width: 100%; height: 100%; pointer-events: none; }
-.pt-gear-ring { fill: none; stroke: #fff; stroke-width: 2.5; }
-.pt-gear-tooth { stroke: #fff; stroke-width: 5; stroke-linecap: butt; }
+.pt-corner svg {
+  display: block; width: 100%; height: 100%; pointer-events: none;
+  filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.85)) drop-shadow(0 0 1px rgba(0, 0, 0, 0.85));
+}
+.pt-gear-body { fill: #fff; }
+.pt-gear-hole { fill: #14181b; }
 .pt-gear-label { fill: #fff; font: 700 13px -apple-system, system-ui, sans-serif; }
 .pt-start {
   position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); z-index: 3;

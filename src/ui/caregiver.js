@@ -33,11 +33,14 @@ function el(tag, props = {}, ...kids) {
 
 const errText = (err) => (err && err.message ? err.message : 'Something went wrong.');
 
+// Wrong-PIN throttle at module level (still memory only): leaving and re-entering the caregiver
+// view must not reset it.
+let wrongTries = 0;
+let lockedUntil = 0;
+
 export function mount(container) {
   let unlocked = false;
   let alive = true;
-  let wrongTries = 0;
-  let lockedUntil = 0;
   const urls = new Set();
   let viewUrls = []; // object URLs belonging to the current screen
   let staleUrls = []; // previous screen's URLs, revoked once the new screen is shown
@@ -152,6 +155,7 @@ export function mount(container) {
     }
     if (!alive) return;
     const stale = await staleModel(people);
+    if (!alive) return; // left meanwhile: don't create object URLs nobody will revoke
     const msg = message();
     beginScreen();
     const items = people.map((p) => {

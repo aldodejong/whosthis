@@ -2,7 +2,7 @@
 // Bump CACHE_VERSION whenever a shipped file changes, otherwise phones keep the old copy.
 // When src/ or vendor/ files are added, list them in PRECACHE below.
 
-const CACHE_VERSION = 'v10';
+const CACHE_VERSION = 'v12';
 const CACHE_PREFIX = 'whosthis-';
 const CACHE_NAME = `${CACHE_PREFIX}${CACHE_VERSION}`;
 
@@ -41,7 +41,9 @@ const PRECACHE = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then((cache) => cache.addAll(PRECACHE))
+      // cache: 'reload' bypasses the browser's HTTP cache (GitHub Pages sends max-age=600), so a new
+      // version never precaches a stale copy of a file from the previous release.
+      .then((cache) => cache.addAll(PRECACHE.map((path) => new Request(path, { cache: 'reload' }))))
       .then(() => self.skipWaiting())
   );
 });

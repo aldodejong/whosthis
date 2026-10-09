@@ -4,7 +4,7 @@
 // Every function returns a promise that rejects with an Error carrying a plain message.
 
 import { DEFAULTS } from './matcher.js';
-import { MAX_PEOPLE, clampAccept } from './caregiver-logic.js';
+import { MAX_PEOPLE, clampAccept, clampMargin, clampConfirmFrames } from './caregiver-logic.js';
 
 const DB_NAME = 'whosthis';
 const DB_VERSION = 1;
@@ -105,6 +105,8 @@ export async function getSettings() {
   const saved = await withStore('settings', 'readonly', 'Could not load settings', (s) => s.get(SETTINGS_KEY));
   const out = { ...defaultSettings(), ...(saved || {}) };
   out.accept = clampAccept(out.accept, DEFAULTS.accept);
+  out.margin = clampMargin(out.margin, DEFAULTS.margin);
+  out.confirmFrames = clampConfirmFrames(out.confirmFrames, DEFAULTS.confirmFrames);
   return out;
 }
 
@@ -113,6 +115,8 @@ export async function saveSettings(partial) {
   const current = await getSettings();
   const next = { ...current, ...(partial || {}) };
   next.accept = clampAccept(next.accept, DEFAULTS.accept);
+  next.margin = clampMargin(next.margin, DEFAULTS.margin);
+  next.confirmFrames = clampConfirmFrames(next.confirmFrames, DEFAULTS.confirmFrames);
   next.speechOn = !!next.speechOn;
   await withStore('settings', 'readwrite', 'Could not save settings', (s) => s.put(next, SETTINGS_KEY));
   return next;

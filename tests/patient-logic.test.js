@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { isUsableFace, buildCandidates, cardModel } from '../src/patient-logic.js';
+import { isUsableFace, buildCandidates, cardModel, MIN_FINGERPRINTS } from '../src/patient-logic.js';
 
 const good = { frameFraction: 0.2, angle: { yaw: 5, pitch: -5, roll: 10 } };
 
@@ -19,7 +19,7 @@ test('isUsableFace accepts the boundary values', () => {
 });
 
 test('buildCandidates keeps only current-model people with fingerprints', () => {
-  const e = [new Float32Array([1, 2])];
+  const e = [new Float32Array([1, 2]), new Float32Array([2, 1]), [1, 1]];
   const out = buildCandidates([
     { id: 'a', embeddingModel: 'm1', embeddings: e, name: 'A' },
     { id: 'b', embeddingModel: 'old', embeddings: e },
@@ -29,6 +29,21 @@ test('buildCandidates keeps only current-model people with fingerprints', () => 
   ], 'm1');
   assert.deepEqual(out, [{ id: 'a', embeddings: e }]);
   assert.deepEqual(buildCandidates(undefined, 'm1'), []);
+});
+
+test('buildCandidates: fewer than 3 usable fingerprints -> never a candidate', () => {
+  assert.equal(MIN_FINGERPRINTS, 3);
+  const ok = [1, 2];
+  const people = [
+    { id: 'two', embeddingModel: 'm1', embeddings: [ok, ok] },
+    // three entries, but two are unusable (NaN, zero) -> only one left
+    { id: 'damaged', embeddingModel: 'm1', embeddings: [ok, [NaN, 1], [0, 0]] },
+    // unusable entries are dropped, the rest kept
+    { id: 'mixed', embeddingModel: 'm1', embeddings: [ok, ok, [Infinity, 1], ok, null, []] },
+    // lengths disagree: not trustworthy
+    { id: 'lengths', embeddingModel: 'm1', embeddings: [ok, ok, [1, 2, 3]] },
+  ];
+  assert.deepEqual(buildCandidates(people, 'm1'), [{ id: 'mixed', embeddings: [ok, ok, ok] }]);
 });
 
 test('cardModel builds text and trims', () => {
