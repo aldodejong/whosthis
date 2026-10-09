@@ -50,6 +50,9 @@ export function mount(container) {
   const startBtn = el('button', 'pt-start', 'Tap to start');
   startBtn.type = 'button';
   const corner = el('div', 'pt-corner');
+  corner.setAttribute('aria-label', 'Caregiver settings: press and hold for 3 seconds');
+  corner.setAttribute('role', 'img');
+  corner.append(gearIcon());
   stage.append(video, card, hint, startBtn, corner);
   container.append(stage);
 
@@ -266,4 +269,28 @@ export function mount(container) {
     revokePhoto();
     document.removeEventListener('visibilitychange', onVisibility);
   };
+}
+
+// Settings gear with "3s" in the middle: the caregiver entry (press and hold 3 seconds).
+function gearIcon() {
+  const NS = 'http://www.w3.org/2000/svg';
+  const mk = (tag, attrs) => {
+    const n = document.createElementNS(NS, tag);
+    for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+    return n;
+  };
+  const svg = mk('svg', { viewBox: '0 0 48 48', 'aria-hidden': 'true', focusable: 'false' });
+  for (let i = 0; i < 8; i++) {
+    const a = (i * Math.PI) / 4;
+    svg.append(mk('line', {
+      x1: (24 + 17 * Math.cos(a)).toFixed(2), y1: (24 + 17 * Math.sin(a)).toFixed(2),
+      x2: (24 + 22 * Math.cos(a)).toFixed(2), y2: (24 + 22 * Math.sin(a)).toFixed(2),
+      class: 'pt-gear-tooth',
+    }));
+  }
+  svg.append(mk('circle', { cx: 24, cy: 24, r: 17, class: 'pt-gear-ring' }));
+  const label = mk('text', { x: 24, y: 24, class: 'pt-gear-label', 'text-anchor': 'middle', 'dominant-baseline': 'central' });
+  label.textContent = '3s';
+  svg.append(label);
+  return svg;
 }

@@ -2,7 +2,7 @@
 // Bump CACHE_VERSION whenever a shipped file changes, otherwise phones keep the old copy.
 // When src/ or vendor/ files are added, list them in PRECACHE below.
 
-const CACHE_VERSION = 'v9';
+const CACHE_VERSION = 'v10';
 const CACHE_PREFIX = 'whosthis-';
 const CACHE_NAME = `${CACHE_PREFIX}${CACHE_VERSION}`;
 

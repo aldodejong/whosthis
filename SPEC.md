@@ -37,7 +37,7 @@ A web app for iPhone that helps a person with Alzheimer's recognise up to 5 fami
 4. If speech is on, the app says *"This is Jane, your daughter."* (rate about 0.85).
 5. The card stays up while the person is in view and fades 2 seconds after they leave.
 6. Nothing is shown for no face. No error messages, ever: nothing technical is ever shown to the patient. **Exception (user-requested after desktop testing, because a blank screen was confusing):** when a face has been continuously in view (usable, or too small/turned) for about 1.5 s without a confirmed person, a calm, small, large-type line appears at the top of the screen, away from the card: *"Not sure who this is"*, or *"Please come a little closer"* when the face is too small. It hides as soon as a person is confirmed or the face has been gone for ~0.4 s (a single dropped detection doesn't make it blink), with the same 300 ms fade (none under Reduce Motion). Contrast ≥ 7:1. It never changes matching: unknown and low-confidence faces are still never named.
-7. There are no visible buttons. Opening caregiver mode takes a **3-second long-press in the top-left corner**, then the PIN.
+7. The only controls are the start button and a small **settings icon (gear with "3s") in the top-left corner** (user-requested, replacing the invisible hot-spot). Opening caregiver mode takes a **3-second press-and-hold on it**, then the PIN.
 8. The screen stays awake (Wake Lock API) while in patient mode.
 
 ### Caregiver mode (behind a PIN)

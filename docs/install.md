@@ -25,7 +25,7 @@ The Who's This? icon now appears on the Home Screen. From now on, open the app f
 ## 3. First open: set a PIN and add people
 
 1. Open **Who's This?** from the Home Screen. Tap **Tap to start**. Allow camera access when asked.
-2. To open the caregiver area, **press and hold the top-left corner of the camera screen for 3 seconds**. The screen changes to the caregiver area.
+2. To open the caregiver area, **press and hold the small gear icon marked "3s" in the top-left corner of the camera screen for 3 seconds**. The screen changes to the caregiver area.
 3. Set a **PIN** of 4 to 6 digits. Write it down and keep it somewhere safe. The PIN stops the person from opening the caregiver area by accident. It is not strong security.
 4. Tap **Add a person** and enter:
    - the **name**, for example "Jane",
