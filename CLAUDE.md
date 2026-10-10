@@ -22,5 +22,5 @@ Open http://localhost:8000 (camera works on localhost). The iPhone needs HTTPS, 
 ## Test
 
 ```bash
-node --test tests/
+node --test tests/*.test.js
 ```
