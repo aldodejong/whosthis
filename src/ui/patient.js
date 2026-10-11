@@ -292,14 +292,14 @@ function gearIcon() {
   };
   const svg = mk('svg', { viewBox: '0 0 48 48', 'aria-hidden': 'true', focusable: 'false' });
   // Solid cog: 8 flat-topped teeth around a body, no ring around the teeth.
-  const TEETH = 8, R_OUT = 22, R_IN = 17, TOOTH = 0.30, GAP_SHARE = 0.5; // radians of half-width at tip / root
+  const TEETH = 8, R_OUT = 22, R_IN = 17.5, ROOT = 0.20, TIP = 0.15; // half-widths in radians at the root / tip: tooth ~0.40 vs gap ~0.39 at the root
   const pt = (r, a) => `${(24 + r * Math.cos(a)).toFixed(2)} ${(24 + r * Math.sin(a)).toFixed(2)}`;
   let d = '';
   for (let i = 0; i < TEETH; i++) {
     const c = (i * 2 * Math.PI) / TEETH;
-    const root = TOOTH + 0.12, tip = TOOTH * GAP_SHARE + 0.1;
+    const root = ROOT, tip = TIP;
     d += `${i ? 'L' : 'M'}${pt(R_IN, c - root)} L${pt(R_OUT, c - tip)} L${pt(R_OUT, c + tip)} L${pt(R_IN, c + root)} `;
-    const next = c + (2 * Math.PI) / TEETH - (TOOTH + 0.12);
+    const next = c + (2 * Math.PI) / TEETH - ROOT;
     d += `A${R_IN} ${R_IN} 0 0 1 ${pt(R_IN, next)} `;
   }
   svg.append(mk('path', { d: d + 'Z', class: 'pt-gear-body' }));
