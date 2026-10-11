@@ -2,7 +2,7 @@
 // Bump CACHE_VERSION whenever a shipped file changes, otherwise phones keep the old copy.
 // When src/ or vendor/ files are added, list them in PRECACHE below.
 
-const CACHE_VERSION = 'v13';
+const CACHE_VERSION = 'v19';
 const CACHE_PREFIX = 'whosthis-';
 const CACHE_NAME = `${CACHE_PREFIX}${CACHE_VERSION}`;
 
@@ -21,6 +21,9 @@ const PRECACHE = [
   './src/matcher.js',
   './src/store.js',
   './src/caregiver-logic.js',
+  './src/backup.js',
+  './src/install-guide.js',
+  './src/version.js',
   './src/patient-logic.js',
   './src/speech.js',
   // Face library + models (about 12 MB, see vendor/README.md).
@@ -33,6 +36,7 @@ const PRECACHE = [
   './vendor/human/models/faceres.bin',
   './vendor/tfjs-backend-wasm/tfjs-backend-wasm.wasm',
   './vendor/tfjs-backend-wasm/tfjs-backend-wasm-simd.wasm',
+  './icons/icon.svg',
   './icons/icon-180.png',
   './icons/icon-192.png',
   './icons/icon-512.png',

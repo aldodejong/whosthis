@@ -15,8 +15,11 @@ export const MIN_SHARPNESS = 30;
 export const SHARPNESS_WIDTH = 256;
 export const MAX_PHOTO_PX = 1024;
 
-// Match strictness (accept threshold). Never below 0.60: when in doubt, show nothing.
-export const ACCEPT_MIN = 0.6;
+// Match strictness (accept threshold), the only setting that may be looser than the default.
+// Owner decision 2026-10-11: 0.65 was too hard to meet on the iPhone, so the floor is 0.55
+// and the default is DEFAULTS.accept = 0.60. Lower = more wrong names; tune in Test mode.
+// margin and confirmFrames stay stricter-only (clampMargin / clampConfirmFrames).
+export const ACCEPT_MIN = 0.55;
 export const ACCEPT_MAX = 0.8;
 
 // Wrong-PIN throttle.
@@ -45,9 +48,11 @@ export function pinProblem(pin) {
   return null;
 }
 
-/** Clamp a strictness value into the safe range. Non-numbers fall back to `fallback`. */
+/** Clamp a strictness value into [ACCEPT_MIN, ACCEPT_MAX]. Non-numbers (and null/''/booleans) fall back to `fallback`. */
 export function clampAccept(value, fallback) {
-  const n = Number(value);
+  // Only real numbers or numeric strings (the slider gives "0.62"); Number(null) or Number('') would be 0.
+  const n = typeof value === 'number' ? value
+    : typeof value === 'string' && value.trim() !== '' ? Number(value) : NaN;
   if (!Number.isFinite(n)) return fallback;
   return Math.min(ACCEPT_MAX, Math.max(ACCEPT_MIN, n));
 }

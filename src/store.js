@@ -122,6 +122,39 @@ export async function saveSettings(partial) {
   return next;
 }
 
+/**
+ * Replaces ALL people and merges settings in ONE transaction: either everything is written or,
+ * on any error, nothing is (the transaction aborts). `people` must already be validated.
+ * `settingsPatch` is merged into the current settings and clamped like saveSettings().
+ */
+export async function replaceAll(people, settingsPatch) {
+  if (!Array.isArray(people) || people.length > MAX_PEOPLE) throw new Error(`At most ${MAX_PEOPLE} people can be stored.`);
+  const current = await getSettings();
+  const next = { ...current, ...(settingsPatch || {}) };
+  next.accept = clampAccept(next.accept, DEFAULTS.accept);
+  next.margin = clampMargin(next.margin, DEFAULTS.margin);
+  next.confirmFrames = clampConfirmFrames(next.confirmFrames, DEFAULTS.confirmFrames);
+  next.speechOn = !!next.speechOn;
+  const db = await openDb();
+  await new Promise((resolve, reject) => {
+    let tx;
+    try {
+      tx = db.transaction(['people', 'settings'], 'readwrite');
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(plain(tx.error, 'Could not restore the backup'));
+      tx.onabort = () => reject(plain(tx.error, 'Could not restore the backup'));
+      const ps = tx.objectStore('people');
+      ps.clear();
+      for (const p of people) ps.put(p);
+      tx.objectStore('settings').put(next, SETTINGS_KEY);
+    } catch (err) {
+      try { if (tx) tx.abort(); } catch (e) { /* ignore */ }
+      reject(plain(err, 'Could not restore the backup'));
+    }
+  });
+  return next;
+}
+
 /** Asks the browser not to evict our data. Never throws. Resolves to true/false. */
 export async function requestPersistence() {
   try {

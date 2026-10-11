@@ -10,11 +10,53 @@ test('pinProblem', () => {
   for (const bad of ['123', '1234567', 'abcd', '12 4', '', null, 1234]) assert.ok(L.pinProblem(bad));
 });
 
-test('clampAccept never goes below the safe minimum', () => {
-  assert.equal(L.clampAccept(0.3, 0.65), 0.6);
-  assert.equal(L.clampAccept(0.95, 0.65), 0.8);
-  assert.equal(L.clampAccept(0.7, 0.65), 0.7);
-  assert.equal(L.clampAccept('x', 0.65), 0.65);
+test('accept range is 0.55-0.80; default is 0.60 (owner decisions 2026-10-11)', async () => {
+  const { DEFAULTS } = await import('../src/matcher.js');
+  assert.equal(L.ACCEPT_MIN, 0.55);
+  assert.equal(L.ACCEPT_MAX, 0.8);
+  assert.equal(DEFAULTS.accept, 0.6);
+  assert.ok(L.ACCEPT_MIN <= DEFAULTS.accept && DEFAULTS.accept <= L.ACCEPT_MAX);
+});
+
+test('clampAccept keeps values inside [0.55, 0.80]', () => {
+  assert.equal(L.clampAccept(0.55, 0.6), 0.55);
+  assert.equal(L.clampAccept(0.8, 0.6), 0.8);
+  assert.equal(L.clampAccept(0.54, 0.6), 0.55);
+  assert.equal(L.clampAccept(0.5, 0.6), 0.55);
+  assert.equal(L.clampAccept(0.3, 0.6), 0.55);
+  assert.equal(L.clampAccept(-1, 0.6), 0.55);
+  assert.equal(L.clampAccept(0.81, 0.6), 0.8);
+  assert.equal(L.clampAccept(0.95, 0.6), 0.8);
+  assert.equal(L.clampAccept(0.7, 0.6), 0.7);
+  assert.equal(L.clampAccept(0.6, 0.6), 0.6);
+  assert.equal(L.clampAccept(0.65, 0.6), 0.65); // the old default stays valid
+  assert.equal(L.clampAccept('0.57', 0.6), 0.57); // slider values are strings
+  assert.equal(L.clampAccept('0.4', 0.6), 0.55);
+});
+
+test('clampAccept: NaN / garbage falls back to the 0.60 default, never to the floor', () => {
+  for (const junk of [NaN, Infinity, -Infinity, 'x', '', '  ', null, undefined, true, false, {}, [], [0.5]]) {
+    assert.equal(L.clampAccept(junk, 0.6), 0.6, `junk ${String(junk)}`);
+  }
+});
+
+test('clampAccept with the real default: garbage -> DEFAULTS.accept (0.60), old default 0.65 kept as saved', async () => {
+  const { DEFAULTS } = await import('../src/matcher.js');
+  for (const junk of [NaN, 'x', '', null, undefined, true, {}]) {
+    assert.equal(L.clampAccept(junk, DEFAULTS.accept), 0.6, `junk ${String(junk)}`);
+  }
+  // Someone who already saved 0.65 (the old default) keeps it.
+  assert.equal(L.clampAccept(0.65, DEFAULTS.accept), 0.65);
+  // "Reset to recommended" writes DEFAULTS.accept, which survives the clamp unchanged.
+  assert.equal(L.clampAccept(DEFAULTS.accept, DEFAULTS.accept), 0.6);
+  assert.equal(L.clampAccept(String(DEFAULTS.accept), DEFAULTS.accept), 0.6);
+});
+
+test('clampAccept: nothing outside [0.55, 0.80] ever comes out (sweep)', () => {
+  for (let v = -2; v <= 2; v += 0.001) {
+    const a = L.clampAccept(v, 0.6);
+    assert.ok(a >= 0.55 && a <= 0.8, `value ${v} -> ${a}`);
+  }
 });
 
 test('clampMargin / clampConfirmFrames never go below the tuned defaults', () => {

@@ -28,8 +28,8 @@ The site is served by GitHub Pages straight from the `main` branch, root folder.
 
 To release:
 
-1. Bump `CACHE_VERSION` in `sw.js` (for example `v11` to `v12`). Do this on every release, whenever any shipped file changes. Without it, phones keep serving the old cached copy.
+1. Bump `CACHE_VERSION` in `sw.js` AND `APP_VERSION` in `src/version.js` together (for example `v11` to `v12`); `tests/version.test.js` fails if they differ. Do this on every release, whenever any shipped file changes. Without it, phones keep serving the old cached copy.
 2. Commit and push to `main`. GitHub Pages republishes the site after the push (check the Actions or Pages status if it takes a while).
-3. Open `https://aldodejong.github.io/whosthis/` on the iPhone and check the change. Close the Home Screen app fully and reopen it if it still looks old.
+3. On the iPhone, open the caregiver area and press **Refresh app** (People screen, About) to pick up the release without waiting for the service worker's slow update cycle. Or open `https://aldodejong.github.io/whosthis/` on the iPhone and check the change. Close the Home Screen app fully and reopen it if it still looks old.
 
 Never commit family photos or other test images. They belong in `testdata/`, which is gitignored.

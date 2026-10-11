@@ -9,8 +9,68 @@ import {
   pinProblem, checkPhoto, laplacianVariance, fitWithin, draftProblem, clampAccept,
 } from '../caregiver-logic.js';
 import { DEFAULTS } from '../matcher.js';
+import {
+  MAX_BACKUP_BYTES, buildBackup, validateBackup, importSummary, decodePhoto, shouldNudgeInstall,
+} from '../backup.js';
+import { guideButton } from '../install-guide.js';
+import {
+  APP_VERSION, cacheVersionFromKeys, aboutNote, upToDateMessage, versionsDiffer, MSG_CHECKING, MSG_CHECK_FAILED,
+} from '../version.js';
 
 const MAX_PHOTO_ITEMS = 20; // accepted + rejected shown at once, keeps the screen manageable
+
+const REFRESH_TIMEOUT_MS = 20000;
+
+// Active cache release ('vNN') or null when it cannot be read.
+async function activeCacheVersion() {
+  try {
+    if (typeof caches === 'undefined') return null;
+    return cacheVersionFromKeys(await caches.keys());
+  } catch (err) { return null; }
+}
+
+// Resolves when the worker is activated; rejects on redundant/timeout.
+function whenActivated(worker) {
+  return new Promise((resolve, reject) => {
+    if (worker.state === 'activated') { resolve(); return; }
+    const timer = setTimeout(() => { worker.removeEventListener('statechange', onChange); reject(new Error('timeout')); }, REFRESH_TIMEOUT_MS);
+    function onChange() {
+      if (worker.state === 'activated') { clearTimeout(timer); worker.removeEventListener('statechange', onChange); resolve(); }
+      else if (worker.state === 'redundant') { clearTimeout(timer); worker.removeEventListener('statechange', onChange); reject(new Error('redundant')); }
+    }
+    worker.addEventListener('statechange', onChange);
+  });
+}
+
+// Looks for a newer release and reloads into it. Touches no IndexedDB data or settings, never unregisters
+// the worker and never clears caches (the new worker's own activate step removes the old cache).
+// Why the reload works: the service worker is cache-first and this page runs old code, so only a reload
+// loads the new files. The new worker calls skipWaiting() on install and clients.claim() on activate, so
+// once it is 'activated' a reload is served from its new cache (whosthis-vNN), not the old one.
+// Returns a message to show, or null when the page is reloading.
+async function refreshApp() {
+  try {
+    const sw = navigator.serviceWorker;
+    if (!sw || !sw.getRegistration) return MSG_CHECK_FAILED;
+    const reg = await sw.getRegistration();
+    if (!reg) return MSG_CHECK_FAILED;
+    await reg.update(); // the browser fetches sw.js bypassing the HTTP cache; rejects when offline
+    const worker = reg.installing || reg.waiting;
+    if (worker) {
+      await whenActivated(worker);
+      location.reload();
+      return null;
+    }
+    // Nothing installing: the new worker may already have taken over in the background while this page still runs old code.
+    if (versionsDiffer(APP_VERSION, await activeCacheVersion())) {
+      location.reload();
+      return null;
+    }
+    return upToDateMessage(APP_VERSION);
+  } catch (err) {
+    return MSG_CHECK_FAILED;
+  }
+}
 
 let faceModule = null;
 function loadFace() {
@@ -74,6 +134,7 @@ export function mount(container) {
   }
 
   const heading = (t) => el('h1', { text: t });
+  const brandHeading = (t) => el('div', { class: 'cg-brand' }, el('img', { src: 'icons/icon.svg', alt: '', width: '56', height: '56' }), heading(t));
   const message = (cls = 'cg-msg') => el('p', { class: cls, role: 'alert' });
   const button = (text, onclick, cls = '') => el('button', { type: 'button', class: cls, text, onclick });
   function pinInput(label) {
@@ -99,7 +160,8 @@ export function mount(container) {
     const b = pinInput('Enter it again');
     const msg = message();
     show(
-      heading('Set a PIN'),
+      installNotice(),
+      brandHeading('Set a PIN'),
       el('p', { class: 'cg-note', text: 'Choose a 4 to 6 digit PIN. It keeps the caregiver area away from the patient.' }),
       a, b, msg,
       button('Save PIN', async () => {
@@ -141,12 +203,12 @@ export function mount(container) {
       }
     }
     input.addEventListener('keydown', (e) => { if (e.key === 'Enter') tryPin(); });
-    show(heading('Caregiver'), el('p', { class: 'cg-note', text: 'Enter your PIN.' }), input, msg, button('Unlock', tryPin), exitBtn());
+    show(brandHeading('Caregiver'), el('p', { class: 'cg-note', text: 'Enter your PIN.' }), input, msg, button('Unlock', tryPin), exitBtn());
     input.focus();
   }
 
   // ---------- People list ----------
-  async function showList() {
+  async function showList(note) {
     if (!unlocked) return start();
     let people;
     try { people = await store.listPeople(); } catch (err) {
@@ -157,6 +219,7 @@ export function mount(container) {
     const stale = await staleModel(people);
     if (!alive) return; // left meanwhile: don't create object URLs nobody will revoke
     const msg = message();
+    if (typeof note === 'string') msg.textContent = note;
     beginScreen();
     const items = people.map((p) => {
       const photo = p.displayPhoto ? el('img', { class: 'cg-thumb', alt: '', src: makeUrl(p.displayPhoto) }) : el('div', { class: 'cg-thumb' });
@@ -177,17 +240,192 @@ export function mount(container) {
           }, 'danger')));
     });
     show(
-      heading('People'),
+      installNotice(),
+      brandHeading('People'),
       people.length ? el('ul', { class: 'cg-list' }, items) : el('p', { class: 'cg-note', text: 'No one enrolled yet.' }),
       msg,
       people.length < MAX_PEOPLE
         ? button('Add a person', () => showForm(null))
         : el('p', { class: 'cg-note', text: `The limit of ${MAX_PEOPLE} people is reached.` }),
       button('Settings', showSettings, 'secondary'),
+      el('section', { class: 'cg-section', 'aria-labelledby': 'cg-backup-h' },
+        el('h2', { id: 'cg-backup-h', text: 'Back up / move to another install' }),
+        el('p', { class: 'cg-note', text: 'Save everything (people, photos and settings) to one file, or restore from a file. Use this to move from a browser tab to the Home Screen app, or to a new phone.' }),
+        button('Create a backup file', showExport, 'secondary'),
+        button('Restore from a backup file', showImport, 'secondary')),
       el('a', { class: 'btn secondary', href: '#/test', text: 'Test mode' }),
       button('Help', showHelp, 'secondary'),
+      aboutSection(),
       exitBtn(),
     );
+  }
+
+  // Caregiver-only: running version, active cache release and a Refresh app button.
+  function aboutSection() {
+    const info = el('p', { class: 'cg-note', text: `Version ${APP_VERSION}` });
+    const note = el('p', { class: 'cg-note', role: 'status' });
+    activeCacheVersion().then((cv) => {
+      if (!alive) return;
+      if (cv) info.textContent = `Version ${APP_VERSION} (installed release: whosthis-${cv})`;
+      note.textContent = aboutNote(APP_VERSION, cv);
+    });
+    const btn = button('Refresh app', async () => {
+      btn.disabled = true;
+      note.textContent = MSG_CHECKING;
+      const result = await refreshApp();
+      if (!alive) return;
+      if (result !== null) note.textContent = result;
+      btn.disabled = false;
+    }, 'secondary');
+    btn.style.minHeight = '64px';
+    return el('section', { class: 'cg-section', 'aria-labelledby': 'cg-about-h' },
+      el('h2', { id: 'cg-about-h', text: 'About' }), info, note, btn);
+  }
+
+  // Prominent notice at the top of caregiver screens when running in a browser tab on an iPhone.
+  function installNotice() {
+    let nudge = false;
+    try { nudge = shouldNudgeInstall(navigator, window.matchMedia && window.matchMedia.bind(window)); } catch (err) { /* ignore */ }
+    if (!nudge) return null;
+    return el('div', { class: 'cg-install', role: 'note' },
+      el('strong', { text: 'Install first, then set up' }),
+      el('p', { text: 'You are in a Safari tab. Data saved in a browser tab does NOT carry over to the Home Screen app. They are stored separately.' }),
+      el('p', { text: 'Tap the Share button, then Add to Home Screen. Open Who\'s This? from its new icon and set up the people there.' }),
+      guideButton('ig-open-cg'),
+      el('p', { text: 'Already added people here in Safari? Tap Create a backup file below, then open the Home Screen app and use Restore from a backup file.' }));
+  }
+
+  // ---------- Backup / restore ----------
+  const PRIVACY = 'The backup file contains photos of your family members, their names, and your PIN code in scrambled form. Keep it private: do not post it, email it to people who should not see it, or leave it in shared folders. Delete it when you are done.';
+
+  function blobToDataUrl(blob) {
+    return new Promise((resolve, reject) => {
+      const r = new FileReader();
+      r.onload = () => resolve(String(r.result));
+      r.onerror = () => reject(new Error('Could not read a photo.'));
+      r.readAsDataURL(blob);
+    });
+  }
+
+  async function makeBackupFile() {
+    const [people, settings] = await Promise.all([store.listPeople(), store.getSettings()]);
+    if (!people.length) throw new Error('There is nobody to back up yet.');
+    const encoded = [];
+    for (const p of people) {
+      encoded.push({
+        ...p,
+        displayPhoto: await blobToDataUrl(p.displayPhoto),
+        enrolPhotos: await Promise.all((p.enrolPhotos || []).map(blobToDataUrl)),
+        embeddings: p.embeddings || [],
+      });
+    }
+    const backup = buildBackup(encoded, settings);
+    const checked = validateBackup(backup); // never offer a file we could not restore ourselves
+    if (!checked.ok) throw new Error(`The backup could not be made: ${checked.error}`);
+    const json = JSON.stringify(backup);
+    const day = new Date().toISOString().slice(0, 10);
+    return new File([json], `whosthis-backup-${day}.json`, { type: 'application/json' });
+  }
+
+  function downloadFile(file) {
+    const url = URL.createObjectURL(file);
+    const a = el('a', { href: url, download: file.name });
+    a.style.display = 'none';
+    document.body.append(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  }
+
+  function showExport() {
+    const msg = message();
+    const actions = el('div', { class: 'cg-stack' });
+    const make = button('Create the backup file', async () => {
+      msg.textContent = 'Making the backup…';
+      make.disabled = true;
+      try {
+        const file = await makeBackupFile();
+        if (!alive) return;
+        msg.textContent = `Backup ready (${(file.size / 1048576).toFixed(1)} MB). Save it somewhere safe.`;
+        const kids = [];
+        let canShare = false;
+        try { canShare = !!(navigator.canShare && navigator.share && navigator.canShare({ files: [file] })); } catch (err) { /* ignore */ }
+        if (canShare) {
+          kids.push(button('Share or save to Files', async () => {
+            try { await navigator.share({ files: [file], title: 'Who\'s This? backup' }); }
+            catch (err) { if (!err || err.name !== 'AbortError') { msg.textContent = 'Sharing did not work. Use Download instead.'; } }
+          }));
+        }
+        kids.push(button('Download the file', () => downloadFile(file), canShare ? 'secondary' : ''));
+        actions.replaceChildren(...kids);
+        make.hidden = true;
+      } catch (err) {
+        msg.textContent = errText(err);
+        make.disabled = false;
+      }
+    });
+    show(
+      heading('Create a backup'),
+      el('p', { class: 'cg-warn', text: PRIVACY }),
+      make, msg, actions,
+      button('Back', () => showList(), 'secondary'));
+  }
+
+  function showImport() {
+    const msg = message();
+    const panel = el('div', { class: 'cg-stack' });
+    const input = el('input', { type: 'file', accept: 'application/json,.json', class: 'cg-file', 'aria-label': 'Choose a backup file' });
+    const pick = el('label', { class: 'btn' }, 'Choose a backup file', input);
+    input.addEventListener('change', async () => {
+      const file = input.files && input.files[0];
+      input.value = '';
+      panel.replaceChildren();
+      if (!file) return;
+      msg.textContent = 'Checking the file…';
+      try {
+        if (file.size > MAX_BACKUP_BYTES) throw new Error('That file is too big to be a backup.');
+        let data;
+        try { data = JSON.parse(await file.text()); } catch (err) { throw new Error('That file is not a backup (it could not be read).'); }
+        const checked = validateBackup(data);
+        if (!checked.ok) throw new Error(checked.error);
+        // Decode every photo now, so a bad one stops us BEFORE anything is written.
+        const rows = checked.people.map((p) => ({
+          id: p.id, name: p.name, relationship: p.relationship, createdAt: p.createdAt, embeddingModel: p.embeddingModel,
+          displayPhoto: toBlob(p.displayPhoto),
+          enrolPhotos: p.enrolPhotos.map(toBlob),
+          embeddings: p.embeddings.map((e) => Float32Array.from(e)),
+        }));
+        const current = await store.listPeople();
+        if (!alive) return;
+        msg.textContent = '';
+        panel.replaceChildren(
+          el('p', { class: 'cg-warn', text: importSummary(current.length, rows) }),
+          el('p', { class: 'cg-note', text: `From the backup: ${rows.map((r) => `${r.name} (${r.relationship})`).join(', ')}.` }),
+          el('p', { class: 'cg-note', text: 'The current people, photos and settings will be deleted and replaced. The PIN from the backup will be used if it has one. This cannot be undone.' }),
+          button('Yes, replace everything', async () => {
+            panel.replaceChildren();
+            msg.textContent = 'Restoring…';
+            try {
+              await store.replaceAll(rows, checked.settings);
+              store.requestPersistence();
+              if (alive) showList(`Restored ${rows.length} ${rows.length === 1 ? 'person' : 'people'} from the backup. If asked for a PIN later, use the PIN from the backup.`);
+            } catch (err) { msg.textContent = `Nothing was changed. ${errText(err)}`; }
+          }),
+          button('No, keep what I have', () => showList(), 'secondary'));
+      } catch (err) {
+        msg.textContent = `${errText(err)} Nothing was changed.`;
+      }
+    });
+    show(
+      heading('Restore from a backup'),
+      el('p', { class: 'cg-warn', text: PRIVACY }),
+      pick, msg, panel,
+      button('Back', () => showList(), 'secondary'));
+  }
+
+  function toBlob(dataUrl) {
+    const { type, bytes } = decodePhoto(dataUrl);
+    return new Blob([bytes], { type });
   }
 
   // Returns the current embedding model name if any person has an older one, else null.
@@ -413,11 +651,24 @@ export function mount(container) {
 
     const slider = el('input', { type: 'range', min: String(ACCEPT_MIN), max: String(ACCEPT_MAX), step: '0.01', 'aria-label': 'Match strictness', class: 'cg-range' });
     slider.value = String(clampAccept(s.accept, DEFAULTS.accept));
-    const sliderVal = el('span', { class: 'cg-note' });
-    const sliderText = () => { sliderVal.textContent = `Threshold ${Number(slider.value).toFixed(2)} (standard is ${DEFAULTS.accept.toFixed(2)}).`; };
+    const rec = DEFAULTS.accept.toFixed(2);
+    const sliderVal = el('p', { class: 'cg-note', 'aria-live': 'polite' });
+    const sliderText = () => {
+      const v = clampAccept(slider.value, DEFAULTS.accept);
+      const where = v < DEFAULTS.accept - 1e-9
+        ? 'Looser than recommended: wrong names are more likely. Check in Test mode.'
+        : v > DEFAULTS.accept + 1e-9 ? 'Stricter than recommended.' : 'This is the recommended setting.';
+      sliderVal.textContent = `Current: ${v.toFixed(2)} (recommended ${rec}). ${where}`;
+    };
     sliderText();
     slider.addEventListener('input', sliderText);
-    slider.addEventListener('change', () => store.saveSettings({ accept: clampAccept(slider.value, DEFAULTS.accept) }).then(() => flash('Saved.'), (e) => flash(errText(e))));
+    const saveAccept = (value) => store.saveSettings({ accept: clampAccept(value, DEFAULTS.accept) }).then(() => flash('Saved.'), (e) => flash(errText(e)));
+    slider.addEventListener('change', () => saveAccept(slider.value));
+    const resetAccept = button(`Reset to recommended (${rec})`, () => {
+      slider.value = String(DEFAULTS.accept);
+      sliderText();
+      saveAccept(DEFAULTS.accept);
+    }, 'secondary');
 
     const cur = pinInput('Current PIN');
     const n1 = pinInput('New PIN (4 to 6 digits)');
@@ -441,9 +692,10 @@ export function mount(container) {
       heading('Settings'),
       el('label', { class: 'cg-switch', for: 'cg-speech' }, speech, ' Say the name out loud'),
       el('h2', { text: 'Advanced: match strictness' }),
-      el('p', { class: 'cg-note', text: 'Stricter shows a name less often but makes a wrong name less likely. When in doubt, the app shows nothing, so it cannot go below the loosest safe setting.' }),
+      el('p', { class: 'cg-note', text: `Looser (lower) recognises people more easily, but may name the wrong person. Stricter (higher) names people less often, but more safely. ${rec} is the recommended setting. Use Test mode to see the scores before changing it.` }),
       el('div', { class: 'cg-slider' }, el('span', { text: 'Looser' }), slider, el('span', { text: 'Stricter' })),
       sliderVal,
+      resetAccept,
       el('h2', { text: 'Change PIN' }),
       cur, n1, n2, pinMsg, changePin,
       msg,
@@ -467,6 +719,8 @@ export function mount(container) {
       el('p', { class: 'cg-msg', text: 'If you delete Safari website data (Settings, Safari, Advanced, Website Data), or remove the app and its data, the enrolled people are deleted and must be added again.' }),
       el('h2', { text: 'Good enrolment photos' }),
       el('p', { text: 'Use clear photos of only one person, facing the camera, in good light. Add a few taken at different times so recognition works in different conditions.' }),
+      el('h2', { text: 'Choosing the match strictness' }),
+      el('p', { text: `Start with the recommended setting (${DEFAULTS.accept.toFixed(2)}). If people are not recognised, open Test mode and point the phone at each enrolled person in turn: note the score of the right person, and the highest score any other person or a stranger gets. Set the strictness in Settings above that highest wrong score, and below the right person's usual score. If those overlap, add more photos instead of lowering it. Never set it lower than you need: a lower setting recognises more easily but may name the wrong person.` }),
       button('Back', showList, 'secondary'),
     );
   }

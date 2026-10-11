@@ -12,6 +12,8 @@ import { createCamera } from '../camera.js';
 import * as face from '../face.js';
 import * as store from '../store.js';
 import * as speech from '../speech.js';
+import { shouldNudgeInstall } from '../backup.js';
+import { guideButton } from '../install-guide.js';
 import { DEFAULTS, scorePeople, decide, createTracker } from '../matcher.js';
 import { gateReason, buildCandidates, cardModel, initialHint, nextHint } from '../patient-logic.js';
 
@@ -49,11 +51,18 @@ export function mount(container) {
   hint.setAttribute('aria-hidden', 'true');
   const startBtn = el('button', 'pt-start', 'Tap to start');
   startBtn.type = 'button';
+  // Calm first-run line for the caregiver: only in an iPhone browser tab, never in the Home Screen app.
+  // The guide opens only when the caregiver taps the button, never by itself.
+  const install = el('div', 'pt-install');
+  install.append(el('p', 'pt-install-text', 'For the best experience, add this to your Home Screen'), guideButton('ig-open-pt'));
+  let nudgeInstall = false;
+  try { nudgeInstall = shouldNudgeInstall(navigator, window.matchMedia && window.matchMedia.bind(window)); } catch (err) { /* ignore */ }
+  install.hidden = !nudgeInstall;
   const corner = el('div', 'pt-corner');
   corner.setAttribute('aria-label', 'Caregiver settings: press and hold for 3 seconds');
   corner.setAttribute('role', 'img');
   corner.append(gearIcon());
-  stage.append(video, card, hint, startBtn, corner);
+  stage.append(video, card, hint, startBtn, install, corner);
   container.append(stage);
 
   let alive = true;
@@ -208,6 +217,7 @@ export function mount(container) {
     hintState = initialHint();
     setHint(null);
     startBtn.hidden = false;
+    install.hidden = !nudgeInstall;
   }
 
   async function loadData() {
@@ -229,6 +239,7 @@ export function mount(container) {
     if (starting || running) return;
     starting = true;
     startBtn.hidden = true;
+    install.hidden = true;
     // Must run inside the tap, before any await (iOS user-gesture rule).
     if (startHandler) { try { startHandler(); } catch { /* ignore */ } }
     try {

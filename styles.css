@@ -131,6 +131,8 @@ textarea {
 /* ---- Caregiver view ---- */
 .cg { max-width: 640px; width: 100%; margin: 0 auto; padding-bottom: 32px; display: flex; flex-direction: column; gap: 12px; }
 .cg h1, .cg h2 { margin-bottom: 0; }
+.cg-brand { display: flex; align-items: center; gap: 14px; }
+.cg-brand img { width: 56px; height: 56px; border-radius: 13px; flex: none; }
 .cg input[type="text"], .cg input[type="password"] { width: 100%; }
 .cg-label { display: flex; flex-direction: column; gap: 6px; font-weight: 600; }
 .cg-label input { font-weight: 400; }
@@ -232,4 +234,68 @@ textarea {
 }
 @media (prefers-reduced-motion: reduce) {
   .pt-hint, .pt-hint.visible { transition: none; }
+}
+
+/* ---- Backup and install notice (caregiver) ---- */
+.cg-section { display: flex; flex-direction: column; gap: 12px; padding: 12px; border: 2px solid var(--muted); border-radius: var(--radius); }
+.cg-section h2 { margin: 0; font-size: 1.25rem; }
+.cg-stack { display: flex; flex-direction: column; gap: 12px; }
+.cg-warn { margin: 0; padding: 12px; font-size: 1rem; font-weight: 600; background: var(--surface); border: 2px solid var(--fg); border-radius: var(--radius); }
+.cg-install { display: flex; flex-direction: column; gap: 8px; padding: 16px; font-size: 1.05rem; background: var(--surface); border: 4px solid var(--fg); border-radius: var(--radius); }
+.cg-install p { margin: 0; }
+.cg-install strong { font-size: 1.4rem; }
+.cg label.btn { position: relative; }
+.pt-install {
+  position: absolute; left: 50%; z-index: 3; transform: translateX(-50%);
+  top: calc(50% + 80px); width: max-content; max-width: calc(100vw - 48px);
+  margin: 0; padding: 12px 20px; text-align: center;
+  font-size: 1.5rem; line-height: 1.25; font-weight: 600; overflow-wrap: anywhere;
+  color: #111418; background: #ffffff; border-radius: 16px;
+  display: flex; flex-direction: column; gap: 10px; align-items: stretch;
+}
+.pt-install-text { margin: 0; }
+.pt-install[hidden] { display: none; }
+.pt-install[hidden] { display: none; }
+@media (prefers-color-scheme: dark) {
+  .pt-install { color: #f2f5f6; background: #0f1417; }
+}
+
+/* ---- Install guide overlay ("OK, show me how") ---- */
+.ig-open {
+  min-height: 64px; padding: 12px 24px; font: inherit; font-size: 1.25rem; font-weight: 700;
+  color: #ffffff; background: #14545c; border: 0; border-radius: var(--radius); cursor: pointer;
+}
+.ig-open-cg { width: 100%; }
+.ig-open:focus-visible, .ig-btn:focus-visible { outline: 4px solid var(--focus); outline-offset: 3px; }
+.ig {
+  position: fixed; inset: 0; z-index: 1000; overflow-y: auto; -webkit-overflow-scrolling: touch;
+  display: flex; flex-direction: column; gap: 16px; align-items: stretch;
+  padding: calc(16px + env(safe-area-inset-top, 0px)) calc(var(--gutter) + env(safe-area-inset-right, 0px))
+           calc(24px + env(safe-area-inset-bottom, 0px)) calc(var(--gutter) + env(safe-area-inset-left, 0px));
+  color: var(--fg); background: var(--bg); font-size: 1.25rem; line-height: 1.45;
+}
+.ig-title { margin: 0; font-size: 1.6rem; line-height: 1.25; }
+.ig-title:focus { outline: none; }
+.ig-body { margin: 0; font-size: 1.3rem; }
+.ig-note { margin: 0; font-size: 1.25rem; color: var(--fg); }
+.ig-art { display: block; width: 100%; max-width: 360px; height: auto; margin: 0 auto; padding: 8px; background: var(--surface); border-radius: var(--radius); }
+.ig-art .ig-line { fill: none; stroke: var(--accent); stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
+.ig-art .ig-paper { fill: var(--bg); }
+.ig-art .ig-fill { fill: var(--accent); stroke: none; }
+.ig-art .ig-hi { fill: none; stroke: var(--fg); stroke-width: 5; stroke-dasharray: 2 9; stroke-linecap: round; }
+.ig-art .ig-face { fill: var(--accent-fg); stroke: none; }
+.ig-art .ig-face-line { fill: none; stroke: var(--accent-fg); stroke-width: 4; stroke-linecap: round; }
+.ig-nav { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
+.ig-btn {
+  width: 100%; min-height: 64px; padding: 12px 24px; font: inherit; font-size: 1.3rem; font-weight: 700;
+  color: #ffffff; background: #14545c; border: 3px solid #14545c; border-radius: var(--radius); cursor: pointer;
+}
+.ig-btn.ig-secondary { color: var(--fg); background: var(--bg); border-color: var(--fg); }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .ig-open, :root:not([data-theme="light"]) .ig-btn { color: #0f1417; background: #5fb8c2; border-color: #5fb8c2; }
+  :root:not([data-theme="light"]) .ig-btn.ig-secondary { color: var(--fg); background: var(--bg); border-color: var(--fg); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ig { animation: ig-in 200ms ease-out; }
+  @keyframes ig-in { from { opacity: 0; } to { opacity: 1; } }
 }

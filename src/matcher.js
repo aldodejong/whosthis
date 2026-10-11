@@ -12,7 +12,7 @@
 //   createTracker(opts)           N-consecutive-frame confirmation + 2 s drop-out
 
 /**
- * Starting defaults. Tuned on thin, non-family data (see SPEC.md phase 4) and deliberately strict;
+ * Starting defaults. Tuned on thin, non-family data (see SPEC.md phase 4); accept lowered to 0.60 by owner decision;
  * re-tune with real enrolment photos in Test mode. Settings in the store may override each one.
  *   accept         minimum score (mean cosine of the 3 best enrolment fingerprints) to name anyone
  *   margin         minimum lead of the best person over the second best
@@ -21,7 +21,7 @@
  *   topK           enrolment fingerprints averaged per person
  */
 export const DEFAULTS = Object.freeze({
-  accept: 0.65,
+  accept: 0.6, // owner decision 2026-10-11: was 0.65 (too hard to meet on the iPhone); see SPEC.md
   margin: 0.1,
   confirmFrames: 5,
   dropMs: 2000,

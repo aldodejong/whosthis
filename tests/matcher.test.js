@@ -20,6 +20,12 @@ test('DEFAULTS are sane and frozen', () => {
   assert.ok(Object.isFrozen(DEFAULTS));
 });
 
+test('DEFAULTS: accept 0.60 (owner decision 2026-10-11, was 0.65); margin and N unchanged', () => {
+  assert.equal(DEFAULTS.accept, 0.6);
+  assert.equal(DEFAULTS.margin, 0.1);
+  assert.equal(DEFAULTS.confirmFrames, 5);
+});
+
 // ---------- cosine
 
 test('cosine: identical, opposite, orthogonal, scale-invariant', () => {
@@ -216,6 +222,25 @@ test('property: adding a near rival can only turn a name into null, never into a
     assert.ok(d === 'jane' || d === null, `rival ${rival} gave ${d}`);
   }
   assert.equal(decide([...base, { id: 'amy', score: 0.75 }], opts), null);
+});
+
+test('property: at the lowest allowed accept (0.55) the margin rule still separates two enrolled people', () => {
+  // Owner decision 2026-10-11 lets accept go down to 0.55; margin stays >= 0.10 and is independent.
+  const low = { accept: 0.55, margin: DEFAULTS.margin };
+  assert.equal(decide(S([['jane', 0.62], ['amy', 0.58]]), low), null, 'both above accept, lead 0.04');
+  assert.equal(decide(S([['jane', 0.90], ['amy', 0.85]]), low), null, 'high but close');
+  assert.equal(decide(S([['jane', 0.70], ['amy', 0.55]]), low), 'jane', 'clear lead');
+  let seed = 7;
+  const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+  for (let t = 0; t < 2000; t++) {
+    const n = 2 + Math.floor(rnd() * 4);
+    const scores = Array.from({ length: n }, (_, i) => ({ id: `p${i}`, score: rnd() }));
+    const id = decide(scores, low);
+    if (id === null) continue;
+    const sorted = scores.map((s) => s.score).sort((a, b) => b - a);
+    assert.ok(sorted[0] - sorted[1] >= DEFAULTS.margin - 1e-9, 'named only with a lead >= margin');
+    assert.ok(sorted[0] >= 0.55);
+  }
 });
 
 test('property: borderline scores around default thresholds return null', () => {

@@ -6,6 +6,7 @@
 import * as patient from './src/ui/patient.js';
 import * as caregiver from './src/ui/caregiver.js';
 import * as test from './src/ui/test.js';
+import { requestPersistence } from './src/store.js';
 
 const ROUTES = { patient, caregiver, test };
 const DEFAULT_ROUTE = 'patient';
@@ -29,6 +30,9 @@ function render() {
   const result = ROUTES[name].mount(container);
   cleanup = typeof result === 'function' ? result : null;
 }
+
+// Ask the browser not to evict our data as early as possible. Never throws, shows nothing.
+try { requestPersistence().catch(() => {}); } catch (err) { /* ignore */ }
 
 window.addEventListener('hashchange', render);
 render();

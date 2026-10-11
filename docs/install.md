@@ -6,6 +6,8 @@ The app helps the person recognise up to five people. When it is sure who is in 
 
 You need an iPhone with iOS 17 or later, and the Safari app.
 
+> **Install first, then set up.** On an iPhone, a Safari tab and the app on the Home Screen keep their data **separately**. People you add in a Safari tab are NOT in the Home Screen app, and the Home Screen app will ask for a new PIN. So add the app to the Home Screen first (steps 1 and 2) and do all the setup inside it (step 3). If you already added people in Safari, see "Moving people from Safari to the Home Screen app" below.
+
 ## 1. Open the app in Safari
 
 Open **Safari** on the iPhone and go to:
@@ -16,15 +18,17 @@ Use Safari for this step. Other browsers cannot install the app to the Home Scre
 
 ## 2. Add it to the Home Screen
 
+In a Safari tab the app shows a notice with a big **OK, show me how** button. Tap it for a full-screen guide with three pictures, one per step below. Its **Open the share menu for me** button may open the iPhone share menu for you (if it does not, use the Share button yourself). An iPhone web page cannot add itself to the Home Screen, so you always have to tap those buttons yourself.
+
 1. Tap the **Share** button (the square with an arrow pointing up). It is at the bottom of the screen, or at the top on an iPad.
 2. Scroll down and tap **Add to Home Screen**.
 3. Tap **Add**.
 
-The Who's This? icon now appears on the Home Screen. From now on, open the app from that icon, not from Safari.
+The Who's This? icon now appears on the Home Screen. From now on, open the app from that icon, not from Safari. **Do not add people in Safari. Close Safari and set up from the icon.**
 
-## 3. First open: set a PIN and add people
+## 3. First open: set a PIN and add people (inside the Home Screen app)
 
-1. Open **Who's This?** from the Home Screen. Tap **Tap to start**. Allow camera access when asked.
+1. Open **Who's This?** from the Home Screen icon. Tap **Tap to start**. Allow camera access when asked.
 2. To open the caregiver area, **press and hold the small gear icon marked "3s" in the top-left corner of the camera screen for 3 seconds**. The screen changes to the caregiver area.
 3. Set a **PIN** of 4 to 6 digits. Write it down and keep it somewhere safe. The PIN stops the person from opening the caregiver area by accident. It is not strong security.
 4. Tap **Add a person** and enter:
@@ -42,6 +46,22 @@ Tips for good photos:
 - Avoid group photos, sunglasses, hats that cover the forehead, and very dark or very bright photos.
 
 You can add up to five people. Add or change people any time from the caregiver area.
+
+### Moving people from Safari to the Home Screen app
+
+Use this if you already added people in a Safari tab (or want to move to a new phone).
+
+1. In the place where the people are (the Safari tab), open the caregiver area, go to **Back up / move to another install** and tap **Create a backup file**. Then tap **Share or save to Files** (or **Download the file**) and save it where the Home Screen app can pick it up, such as the **Files** app.
+2. Open **Who's This?** from the Home Screen icon. Open the caregiver area and set a temporary PIN if asked.
+3. Tap **Restore from a backup file**, choose the file, read the summary ("Replace the current N people with M people from the backup?") and tap **Yes, replace everything**.
+4. The PIN from the backup replaces the temporary one. Check the people list, then delete the backup file.
+
+Notes:
+
+- **The backup file contains photos of your family members, their names and the PIN in scrambled form. Keep it private** and delete it when you are done.
+- Restoring replaces everyone currently in the app. The file is fully checked first; if anything is wrong nothing is changed.
+- Match strictness is restored from the backup, kept within the same range as the slider in Settings (0.55 to 0.80; the recommended setting is 0.60). The other matching safeguards can never be loosened by a backup.
+- Make a backup now and then, because phones can clear website data.
 
 ## 4. Turn up the volume and check the silent switch
 
@@ -67,6 +87,7 @@ The same steps are in the **Help** page of the caregiver area.
 
 - **Everything stays on this iPhone.** Photos and face fingerprints are stored only on the phone. Nothing about the people or the photos is uploaded anywhere.
 - The app needs an internet connection the first time it opens, and when it updates. After that, it works without one.
+- **Safari tabs and the Home Screen app store their data separately.** People added in one are not visible in the other (see the note at the top, and use Back up / Restore to move them).
 - **Deleting Safari website data deletes the people.** To do that, go to Settings, then Safari, then Advanced, then Website Data. Removing the app from the Home Screen also deletes the people. If that happens, add them again from the caregiver area.
 - Keep the phone and its passcode private.
 
@@ -85,8 +106,8 @@ The same steps are in the **Help** page of the caregiver area.
 - **The person is never recognised.** Add more varied photos (3 to 10 is the limit, so swap in better ones). Check the lighting and that the face is facing the camera and fairly close.
 - **The wrong or no name appears.** Let the caregiver check the photos and add better ones. Do not add photos of other people to the same person.
 - **A photo is rejected.** Read the reason shown. Usually it is a blurry photo, more than one face, or the face is too small. Choose a clearer photo.
-- **The people have disappeared.** Safari website data was probably deleted, or the app was removed from the Home Screen. Add the people again.
-- **The app looks out of date after an update.** Close the app fully (swipe it up from the app switcher), then open it again. If it still looks old, open it once with a good connection and try again.
+- **The people have disappeared, or the app asks for a new PIN.** You may have set up in a Safari tab and then opened the Home Screen app (or the other way round): they do not share data. Open the place where you set up, create a backup file, and restore it in the Home Screen app. Otherwise Safari website data was probably deleted, or the app was removed from the Home Screen: restore from a backup, or add the people again.
+- **The app looks out of date after an update.** In caregiver mode, scroll to **About** at the bottom of the People screen and press **Refresh app**; it checks for a new version and reloads (people and settings are kept). If that does not help, close the app fully (swipe it up from the app switcher), then open it again. If it still looks old, open it once with a good connection and try again.
 - **The PIN is locked.** After 5 wrong tries, entry is paused for 30 seconds. Wait, then try again.
 - **Forgotten PIN.** The app has no way to reset it. The PIN can be changed from the caregiver area's Settings only if you still know the current PIN. Otherwise, deleting the app's data (see section 6) clears the PIN and the people, and you would set up the app again.
 

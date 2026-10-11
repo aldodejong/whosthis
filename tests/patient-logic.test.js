@@ -135,7 +135,7 @@ test('nextHint: broken clock or missing state is safe', () => {
 });
 
 // ---- explainDecision --------------------------------------------------------------------------
-const T = { accept: 0.65, margin: 0.1 };
+const T = { accept: 0.6, margin: 0.1 }; // DEFAULTS.accept / DEFAULTS.margin
 const base = { facePresent: true, gate: null, modelOk: true, candidateCount: 2, ...T };
 
 test('explainDecision: accepted matches decide()', () => {
@@ -155,14 +155,14 @@ test('explainDecision: reasons for no match, in priority order', () => {
   assert.equal(g.reason, 'gated: too small');
   assert.equal(g.id, null); // gated faces are never accepted, whatever the scores
   assert.equal(explainDecision({ ...base, scores: [{ id: 'a', score: null }] }).reason, 'no comparable scores');
-  assert.equal(explainDecision({ ...base, scores: [{ id: 'a', score: 0.6 }, { id: 'b', score: 0.1 }] }).reason, 'best < accept');
+  assert.equal(explainDecision({ ...base, scores: [{ id: 'a', score: 0.59 }, { id: 'b', score: 0.1 }] }).reason, 'best < accept');
   assert.equal(explainDecision({ ...base, scores: [{ id: 'a', score: 0.7 }, { id: 'b', score: 0.7 }] }).reason, 'tie');
   assert.equal(explainDecision({ ...base, scores: [{ id: 'a', score: 0.75 }, { id: 'b', score: 0.7 }] }).reason, 'margin too small');
 });
 
 test('explainDecision: one enrolled person, only accept applies (same as decide)', () => {
-  assert.equal(explainDecision({ ...base, candidateCount: 1, scores: [{ id: 'a', score: 0.66 }] }).id, 'a');
-  const r = explainDecision({ ...base, candidateCount: 1, scores: [{ id: 'a', score: 0.64 }] });
+  assert.equal(explainDecision({ ...base, candidateCount: 1, scores: [{ id: 'a', score: 0.61 }] }).id, 'a');
+  const r = explainDecision({ ...base, candidateCount: 1, scores: [{ id: 'a', score: 0.59 }] });
   assert.equal(r.id, null);
   assert.equal(r.reason, 'best < accept');
 });
