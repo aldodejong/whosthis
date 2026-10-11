@@ -65,3 +65,10 @@ b60ca26f404724f43bd2b1575761d8265180e1f053cc0731caa68462927309e7  human/models/f
 Changing the library or any model changes the fingerprints. Update `LIBRARY_VERSION` /
 `EMBEDDING_MODEL` in `src/face.js`, the file list in `sw.js` (and bump `CACHE_VERSION`), and this file.
 Stored people whose `embeddingModel` differs must be re-embedded from their enrolment photos.
+
+## Tabler Icons (a few glyph outlines)
+
+- Source: https://github.com/tabler/tabler-icons (https://tabler.io/icons)
+- Licence: MIT, Copyright (c) 2020-2024 Paweł Kuna. The licence text is at https://github.com/tabler/tabler-icons/blob/main/LICENSE
+- Note: the outlines were reproduced from memory without network access, so they are modelled on, and may differ slightly from, the Tabler files. Swap in the exact files if exact fidelity matters.
+- Used (modelled on): the path data of `upload`, `square-plus`, `bookmark`, `book`, `plus`, `x` and `hand-finger`, copied as constants into `src/install-guide.js` for the install guide drawings. No files are loaded at runtime and nothing here is fetched from a CDN.

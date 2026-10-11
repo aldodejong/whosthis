@@ -18,11 +18,15 @@ Use Safari for this step. Other browsers cannot install the app to the Home Scre
 
 ## 2. Add it to the Home Screen
 
-In a Safari tab the app shows a notice with a big **OK, show me how** button. Tap it for a full-screen guide with three pictures, one per step below. Its **Open the share menu for me** button may open the iPhone share menu for you (if it does not, use the Share button yourself). An iPhone web page cannot add itself to the Home Screen, so you always have to tap those buttons yourself.
+In a Safari tab the app shows a notice with a big **OK, show me how** button. Tap it for a full-screen guide with five big pictures, one short line each, matching the steps below. The buttons and pictures stay at the top of the screen, so you can still use them while the iPhone menus cover the bottom. Tap the numbers 1 to 5 to jump to a step. An iPhone web page cannot add itself to the Home Screen, so you always have to tap these buttons yourself.
 
-1. Tap the **Share** button (the square with an arrow pointing up). It is at the bottom of the screen, or at the top on an iPad.
-2. Scroll down and tap **Add to Home Screen**.
-3. Tap **Add**.
+1. Tap the round **⋯ (three dots)** button next to the address bar at the bottom of Safari.
+2. Tap **Share** in the menu that opens.
+3. Scroll down and tap **Add to Home Screen**. If you cannot see it, scroll to the bottom of the list and look for **Edit Actions** or **View More**.
+4. Tap the blue **Add** button at the top right. Leave **Open as Web App** switched on.
+5. Open the new Who's This? icon on the Home Screen. Set up people there, or, if you had already set up people in the browser, set a new PIN and restore your backup file (**Restore from a backup file**).
+
+On older iPhones there is no three-dots button: tap the **Share** button (a square with an arrow pointing up) in the bottom toolbar, then continue at step 3. On an iPad, Share is at the top right.
 
 The Who's This? icon now appears on the Home Screen. From now on, open the app from that icon, not from Safari. **Do not add people in Safari. Close Safari and set up from the icon.**
 

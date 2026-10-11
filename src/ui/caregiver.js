@@ -129,7 +129,8 @@ export function mount(container) {
     staleUrls = [];
     if (!began) { revoke(viewUrls); viewUrls = []; }
     began = false;
-    root.replaceChildren(...nodes);
+    // replaceChildren(null) would print the word "null"; installNotice() returns null in the Home Screen app.
+    root.replaceChildren(...nodes.filter((n) => n != null && n !== false));
     window.scrollTo(0, 0);
   }
 
@@ -290,7 +291,7 @@ export function mount(container) {
     return el('div', { class: 'cg-install', role: 'note' },
       el('strong', { text: 'Install first, then set up' }),
       el('p', { text: 'You are in a Safari tab. Data saved in a browser tab does NOT carry over to the Home Screen app. They are stored separately.' }),
-      el('p', { text: 'Tap the Share button, then Add to Home Screen. Open Who\'s This? from its new icon and set up the people there.' }),
+      el('p', { text: 'Tap the ⋯ button next to the address bar, then Share, then Add to Home Screen, then Add (keep Open as Web App switched on). Open Who\'s This? from its new icon. Set up people there, or, if you had already set up people in the browser, set a new PIN and restore your backup file (Restore from a backup file).' }),
       guideButton('ig-open-cg'),
       el('p', { text: 'Already added people here in Safari? Tap Create a backup file below, then open the Home Screen app and use Restore from a backup file.' }));
   }

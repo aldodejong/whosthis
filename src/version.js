@@ -2,7 +2,7 @@
 // MUST equal CACHE_VERSION in sw.js: bump both together on every release.
 // tests/version.test.js fails if they drift apart.
 
-export const APP_VERSION = 'v19';
+export const APP_VERSION = 'v23';
 export const CACHE_PREFIX = 'whosthis-';
 
 export const MSG_CHECKING = 'Checking…';
